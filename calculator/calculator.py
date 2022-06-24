@@ -20,7 +20,8 @@ def parse_expression(expr):
                 token += char
             count_point += 1
             continue
-        if token: list_tokens.append(token)
+        if token:
+            list_tokens.append(token)
         count_point = 0
         token = ''
 
@@ -50,15 +51,13 @@ def convert_to_postfix_form(expr):
 
         if token in BINARY:
             while stack and (stack[-1] not in ['(', ')']) and (PRIORITY[token]<=PRIORITY[stack[-1]]):
-                postfix_form.append(stack[-1])
-                stack.pop()
+                postfix_form.append(stack.pop())
             stack.append(token)
         elif token == '(':
             stack.append(token)
         elif token == ')':
             while stack and stack[-1]!='(':
-                postfix_form.append(stack[-1])
-                stack.pop()
+                postfix_form.append(stack.pop())
             if not stack:
                 raise ArithmeticError('"(" is missing.')
             stack.pop()
@@ -66,8 +65,7 @@ def convert_to_postfix_form(expr):
     while stack:
         if stack[-1] == "(":
            raise ArithmeticError('")" is missing.')
-        postfix_form.append(stack[-1])
-        stack.pop()
+        postfix_form.append(stack.pop())
 
     return postfix_form
 
@@ -83,24 +81,23 @@ def calculate(expr, is_postfix=True):
         expr = convert_to_postfix_form(expr)
     else:
         expr = parse_expression(expr)
-    expr.reverse()
 
     while expr:
-        token = expr.pop()
+        token = expr.pop(0)
         if token.replace('.', '', 1).isdigit():
-            stack.append(token)
+            stack.insert(0, token)
         if token in BINARY:
             try:
-                right_oper = float(stack.pop())
+                right_oper = float(stack.pop(0))
                 if stack:
-                    left_oper = float(stack.pop())
+                    left_oper = float(stack.pop(0))
                 elif token=='-':
                     left_oper = 0
                 else:
                     raise ArithmeticError
             except (IndexError, ArithmeticError):
                 raise ArithmeticError('For operation "%s" missing operands' % token)
-            stack.append(calculate_binary_expression(left_oper, right_oper, token))
+            stack.insert(0, calculate_binary_expression(left_oper, right_oper, token))
 
     if not stack:
         raise ValueError('There is no expression to calculate.')

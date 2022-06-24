@@ -1,3 +1,6 @@
+from validate import *
+
+
 BINARY = ('+', '-', '*', '/', '^')
 PRIORITY = {"^": 3, "/": 2, "*": 2, "-": 1, "+": 1}
 
@@ -31,7 +34,8 @@ def parse_expression(expr):
             continue
         else:
             raise ArithmeticError('Find unknown operation or value: %s' % char)
-    if token: list_tokens.append(token)
+    if token:
+        list_tokens.append(token)
 
     return list_tokens
 
@@ -43,9 +47,8 @@ def convert_to_postfix_form(expr):
     """
     postfix_form = []
     stack = []
-    list_tokens = parse_expression(expr)
 
-    for token in list_tokens:
+    for token in expr:
         if token.replace('.', '', 1).isdigit():
             postfix_form.append(token)
 
@@ -58,13 +61,10 @@ def convert_to_postfix_form(expr):
         elif token == ')':
             while stack and stack[-1]!='(':
                 postfix_form.append(stack.pop())
-            if not stack:
-                raise ArithmeticError('"(" is missing.')
-            stack.pop()
+            if stack:
+                stack.pop()
 
     while stack:
-        if stack[-1] == "(":
-           raise ArithmeticError('")" is missing.')
         postfix_form.append(stack.pop())
 
     return postfix_form
@@ -77,10 +77,11 @@ def calculate(expr, is_postfix=True):
     :return: the result of executing a mathematical expression
     """
     stack = []
+    expr = parse_expression(expr)
+    check_brackets(expr)
+
     if not is_postfix:
         expr = convert_to_postfix_form(expr)
-    else:
-        expr = parse_expression(expr)
 
     while expr:
         token = expr.pop(0)

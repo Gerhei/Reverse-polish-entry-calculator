@@ -41,14 +41,20 @@ def convert_to_postfix_form(expr):
     postfix_form = []
     stack = []
 
+    previous = None
     for token in expr:
         if token.replace('.', '', 1).isdigit():
             postfix_form.append(token)
 
-        if token in BINARY:
+        if token in BINARY+UNARY:
+            if token == '-':
+                if not previous or previous in BINARY + UNARY + ('(',):
+                    # unary minus
+                    token = '~'
             while stack and (stack[-1] not in ['(', ')']) and (PRIORITY[token]<=PRIORITY[stack[-1]]):
                 postfix_form.append(stack.pop())
             stack.append(token)
+
         elif token == '(':
             stack.append(token)
         elif token == ')':
@@ -56,6 +62,7 @@ def convert_to_postfix_form(expr):
                 postfix_form.append(stack.pop())
             if stack:
                 stack.pop()
+        previous = token
 
     while stack:
         postfix_form.append(stack.pop())
@@ -82,18 +89,22 @@ def calculate(expr, is_postfix=True):
         token = expr.pop(0)
         if token.replace('.', '', 1).isdigit():
             stack.insert(0, token)
-        if token in BINARY:
-            try:
+        try:
+            # if the expression is enter in a postfix form,
+            # then the check for a unary minus has not yet been performed
+            if is_postfix and token=='-':
+                if len(stack) == 1:
+                    token = '~'
+            if token in BINARY:
                 right_oper = float(stack.pop(0))
-                if stack:
-                    left_oper = float(stack.pop(0))
-                elif token=='-':
-                    left_oper = 0
-                else:
-                    raise ArithmeticError
-            except (IndexError, ArithmeticError):
-                raise ArithmeticError('For operation "%s" missing operands' % token)
-            stack.insert(0, calculate_binary_expression(left_oper, right_oper, token))
+                left_oper = float(stack.pop(0))
+                stack.insert(0, calculate_binary_expression(left_oper, right_oper, token))
+
+            if token in UNARY:
+                oper = float(stack.pop(0))
+                stack.insert(0, calculate_unary_expression(oper, token))
+        except IndexError:
+            raise ArithmeticError('For operation "%s" missing operand' % token)
 
     if not stack:
         raise ValueError('There is no expression to calculate.')
@@ -103,7 +114,7 @@ def calculate(expr, is_postfix=True):
 
 
 def calculate_binary_expression(left_oper, right_oper, operation):
-    if operation=='+':
+    if operation=="+":
         result = left_oper + right_oper
     elif operation=="-":
         result = left_oper - right_oper
@@ -115,4 +126,10 @@ def calculate_binary_expression(left_oper, right_oper, operation):
         result = left_oper / right_oper
     elif operation=="^":
         result = left_oper ** right_oper
+    return result
+
+
+def calculate_unary_expression(operand, operation):
+    if operation=="~":
+        result = -operand
     return result

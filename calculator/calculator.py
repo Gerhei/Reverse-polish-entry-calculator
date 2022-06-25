@@ -13,19 +13,12 @@ def parse_expression(expr):
     """
     list_tokens = []
     token = ''
-    count_point = 0
     for char in expr:
-        if char.isdigit():
+        if char.isdigit() or char == '.':
             token += char
-            continue
-        elif char == '.':
-            if count_point<1:
-                token += char
-            count_point += 1
             continue
         if token:
             list_tokens.append(token)
-        count_point = 0
         token = ''
 
         if char in BINARY or char in ['(', ')']:
@@ -79,6 +72,7 @@ def calculate(expr, is_postfix=True):
     stack = []
     expr = parse_expression(expr)
     check_brackets(expr)
+    check_dots(expr)
 
     if not is_postfix:
         expr = convert_to_postfix_form(expr)

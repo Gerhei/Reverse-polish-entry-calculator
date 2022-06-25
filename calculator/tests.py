@@ -7,18 +7,20 @@ from calculator import *
 class CalculatorTestCase(unittest.TestCase):
     allowed_error = 0.001
 
-    def test_writing_float_number(self):
-        float_numbers = {'1.2.3': '1.23', '1..2.': '1.2', '..4..': '.4', '.3.4': '.34'}
-        for string, num in float_numbers.items():
-            self.assertEqual(num, parse_expression(string)[0])
+    def test_incorrect_float_number(self):
+        incorrect_float_numbers = ['1.2.3', '1..2', '..4..', '.3.4', '.57.']
+        for num in incorrect_float_numbers:
+            with self.assertRaises(ArithmeticError):
+                calculate(num, is_postfix=False)
 
     def test_correct_infix_expressions(self):
         corr_expr = {'1+2': 3, '2*(3+4)': 14, '-2+1': -1, '1.2*4': 4.8, '01.4-5': -3.6, '.43+5': 5.43,
-                     '-.67+1': 0.33, '2/4^2': 0.125, '(3+2)*(4-1)': 15, '-4': -4, '-(4+5)': -9}
+                     '-.67+1': 0.33, '2/4^2': 0.125, '(3+2)*(4-1)': 15, '-4': -4, '-(4+5)': -9, '4.+1': 5}
         for expr, result in corr_expr.items():
             is_equal = abs(result - calculate(expr, is_postfix=False)) <= self.allowed_error
             self.assertTrue(is_equal)
 
+    @skip
     def test_correct_postfix_expression(self):
         corr_expr = {'2 2 +': 4, '2 3 + 5 6 + *': 55, '5 - 1 +': -4, '0.5 2 *': 1.0, '01.4 5 -': -3.6,
                      '3 3 / 2 *': 2, '1 1 + 4 - 1 + *': 15, '4 5 + -': -9}
@@ -27,7 +29,7 @@ class CalculatorTestCase(unittest.TestCase):
             self.assertTrue(is_equal)
 
     def test_incorrect_infix_brackets(self):
-        expr_with_brackets = ['((4+5)', ')-4*(7+8)', ')(', '(5-7)/(3*6']
+        expr_with_brackets = ['((4+5)', ')-4*(7+8)', ')(', '(5-7)/(3*6', '(((1+2', '(5*6))']
         for expr in expr_with_brackets:
             with self.assertRaises(ArithmeticError):
                 calculate(expr, is_postfix=False)

@@ -1,8 +1,5 @@
 from validate import *
-
-
-BINARY = ('+', '-', '*', '/', '^')
-PRIORITY = {"^": 3, "/": 2, "*": 2, "-": 1, "+": 1}
+from operations import *
 
 
 def parse_expression(expr):
@@ -15,21 +12,24 @@ def parse_expression(expr):
     token = ''
     for char in expr:
         if char.isdigit() or char == '.':
+            # parse number
+            token += char
+            continue
+        elif char.isalpha():
+            # parse variable or operations (sin, cos for example)
             token += char
             continue
         if token:
             list_tokens.append(token)
         token = ''
 
-        if char in BINARY or char in ['(', ')']:
-            list_tokens.append(char)
-        elif char == ' ':
+        if char == ' ':
             continue
         else:
-            raise ArithmeticError('Find unknown operation or value: %s' % char)
+            # parse other ('+', '-', '@', etc.)
+            list_tokens.append(char)
     if token:
         list_tokens.append(token)
-
     return list_tokens
 
 
@@ -73,6 +73,7 @@ def calculate(expr, is_postfix=True):
     expr = parse_expression(expr)
     check_brackets(expr)
     check_dots(expr)
+    check_unknown_operation(expr)
 
     if not is_postfix:
         expr = convert_to_postfix_form(expr)
@@ -96,6 +97,8 @@ def calculate(expr, is_postfix=True):
 
     if not stack:
         raise ValueError('There is no expression to calculate.')
+    elif len(stack) > 1:
+        raise ArithmeticError('There are extra operands.')
     return stack[0]
 
 

@@ -1,6 +1,9 @@
-def check_brackets(expr):
+from operations import UNARY, BINARY, BRACKETS
+
+
+def check_brackets(list_tokens):
     brackets = []
-    for token in expr:
+    for token in list_tokens:
         if token == '(':
             brackets.append(token)
         elif token == ')':
@@ -14,9 +17,9 @@ def check_brackets(expr):
         raise ArithmeticError('Unclosed bracket: "%s"' % brackets[-1])
 
 
-def check_dots(expr):
+def check_dots(list_tokens):
     incorrect_decimal = []
-    for token in expr:
+    for token in list_tokens:
         if token.replace('.', '').isdigit():
             count_dots = 0
             for char in token:
@@ -26,3 +29,14 @@ def check_dots(expr):
                 incorrect_decimal.append(token)
     if incorrect_decimal:
         raise ArithmeticError('Incorrect integer separators in numbers: %s' % ', '.join(incorrect_decimal))
+
+
+def check_unknown_operation(list_tokens):
+    for token in list_tokens:
+        if not token.replace('.', '', 1).isdigit():
+            if token.isalpha():
+                if len(token) > 1 and (token not in UNARY+BINARY):
+                    # it is not a variable, but unknown operation
+                    raise ArithmeticError('Unknown operations: %s' % token)
+            elif token not in UNARY+BINARY+BRACKETS:
+                raise ArithmeticError('Unknown operations: %s' % token)

@@ -43,7 +43,8 @@ def convert_to_postfix_form(expr):
 
     previous = None
     for token in expr:
-        if token.replace('.', '', 1).isdigit():
+        # if number or variable
+        if token.replace('.', '', 1).isdigit() or (len(token) == 1 and token.isalpha()):
             postfix_form.append(token)
 
         if token in BINARY+UNARY:
@@ -77,6 +78,7 @@ def calculate(expr, is_postfix=True):
     :return: the result of executing a mathematical expression
     """
     stack = []
+    stack_with_variables = []
     expr = parse_expression(expr)
     check_brackets(expr)
     check_dots(expr)
@@ -87,33 +89,64 @@ def calculate(expr, is_postfix=True):
 
     while expr:
         token = expr.pop(0)
-        if token.replace('.', '', 1).isdigit():
+        # if number or variable
+        if token.replace('.', '', 1).isdigit() or (len(token) == 1 and token.isalpha()):
             stack.insert(0, token)
+
+        # if the expression is enter in a postfix form,
+        # then the check for a unary minus has not yet been performed
+        if is_postfix and token == '-':
+            if len(stack) == 1:
+                token = '~'
+
         try:
-            # if the expression is enter in a postfix form,
-            # then the check for a unary minus has not yet been performed
-            if is_postfix and token=='-':
-                if len(stack) == 1:
-                    token = '~'
             if token in BINARY:
-                right_oper = float(stack.pop(0))
-                left_oper = float(stack.pop(0))
-                stack.insert(0, calculate_binary_expression(left_oper, right_oper, token))
+                right_oper = stack.pop(0)
+                left_oper = stack.pop(0)
+                numbers, variables = split_operands(str(left_oper), str(right_oper))
+                if len(numbers) == 2:
+                    # operation with numbers
+                    stack.insert(0, calculate_binary_expression(left_oper, right_oper, token))
+                elif len(variables) == 2 or len(variables) == 1 and not numbers:
+                    # operation with variables
+                    stack_with_variables.extend([*variables, token])
+                else:
+                    # operation with number and variables
+                    stack_with_variables.extend([*variables, token])
+                    stack.insert(-1, *numbers)
 
-            if token in UNARY:
-                oper = float(stack.pop(0))
-                stack.insert(0, calculate_unary_expression(oper, token))
+            elif token in UNARY:
+                oper = stack.pop(0)
+                if str(oper).isalpha():
+                    stack_with_variables.extend([oper, token])
+                else:
+                    stack.insert(0, calculate_unary_expression(oper, token))
         except IndexError:
-            raise ArithmeticError('For operation "%s" missing operand' % token)
+            if stack_with_variables:
+                stack_with_variables.extend([right_oper, token])
+                break
+            else:
+                raise ArithmeticError('For operation "%s" missing operand' % token)
 
-    if not stack:
+    result = []
+    if stack_with_variables:
+        for elem in stack+stack_with_variables:
+            result.append(str(elem))
+        result = " ".join(result)
+    else:
+        result = stack[0]
+    if not result:
         raise ValueError('There is no expression to calculate.')
     elif len(stack) > 1:
         raise ArithmeticError('There are extra operands.')
-    return stack[0]
+
+    return result
 
 
 def calculate_binary_expression(left_oper, right_oper, operation):
+    left_oper = float(left_oper)
+    right_oper = float(right_oper)
+
     if operation=="+":
         result = left_oper + right_oper
     elif operation=="-":
@@ -130,6 +163,24 @@ def calculate_binary_expression(left_oper, right_oper, operation):
 
 
 def calculate_unary_expression(operand, operation):
+    operand = float(operand)
     if operation=="~":
         result = -operand
     return result
+
+
+def split_operands(left_oper, right_oper):
+    """Divides the expression into 2 parts: numbers and variables"""
+    numbers = []
+    variables = []
+    if left_oper.isalpha():
+        variables.append(left_oper)
+    else:
+        numbers.append(left_oper)
+
+    if right_oper.isalpha():
+        variables.append(right_oper)
+    else:
+        numbers.append(right_oper)
+
+    return numbers, variables
